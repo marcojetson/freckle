@@ -10,15 +10,21 @@ abstract class Operator
     protected static $operatorMap = [
         'eq' => Equals::class,
         'equals' => Equals::class,
+        '=' => Equals::class,
         'not' => Not::class,
+        '!=' => Not::class,
         'gt' => GreaterThan::class,
         'greaterThan' => GreaterThan::class,
+        '>' => GreaterThan::class,
         'gte' => GreaterThanOrEquals::class,
         'greaterThanOrEquals' => GreaterThanOrEquals::class,
+        '>=' => GreaterThanOrEquals::class,
         'lt' => LessThan::class,
         'lessThan' => LessThan::class,
+        '<' => LessThan::class,
         'lte' => LessThanOrEquals::class,
         'lessThanOrEquals' => LessThanOrEquals::class,
+        '<=' => LessThanOrEquals::class,
         'like' => Like::class,
     ];
 
