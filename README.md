@@ -4,6 +4,8 @@ Freckle is a minimalistic Object-Relational-Mapper built on top of Doctrine DBAL
 
 Freckle is heavily inspired by [Spot2](https://github.com/vlucas/spot2).
 
+[![Build Status](https://travis-ci.org/marcojetson/freckle.svg?branch=master)](https://travis-ci.org/marcojetson/freckle)
+
 ## Configuration
 
 You can get a connection through the `Freckle\Manager` class.
