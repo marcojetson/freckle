@@ -183,7 +183,7 @@ class Comment extends Freckle\Entity
   public static function definition()
   {
   	return [
-      'table' => 'post',
+      'table' => 'comment',
       'fields' => [
         'id' => ['integer', 'sequence' => true, 'primary' => true],
         'body' => 'string',
