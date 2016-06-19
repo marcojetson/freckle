@@ -6,6 +6,9 @@ use Doctrine\DBAL\DriverManager;
 
 class Manager
 {
+    /** @var string */
+    protected static $driverManagerClass = DriverManager::class;
+
     /**
      * @param array $params
      * @return Connection
@@ -13,6 +16,6 @@ class Manager
     public static function getConnection($params)
     {
         $params['wrapperClass'] = Connection::class;
-        return DriverManager::getConnection($params);
+        return call_user_func([static::$driverManagerClass, 'getConnection'], $params);
     }
 }

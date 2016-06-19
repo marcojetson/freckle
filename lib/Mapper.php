@@ -31,9 +31,9 @@ class Mapper
         $this->connection = $connection;
         $this->entityClass = $entityClass;
 
-        $definition = call_user_func($entityClass . '::definition', $this);
+        $definition = call_user_func([$this->entityClass, 'definition'], $this);
         $this->table = $definition['table'];
-        $this->fields = array_map(function ($options) { return (array)$options; }, $definition['fields']);
+        $this->fields = array_map([$this, 'field'], $definition['fields']);
         $this->relations = isset($definition['relations']) ? $definition['relations'] : [];
     }
 
@@ -64,11 +64,7 @@ class Mapper
 
         $values = [];
         foreach ($this->fields as $field => $definition) {
-            if (isset($data[$field])) {
-                $values[$field] = $data[$field];
-            } else {
-                $values[$field] = null;
-            }
+            $values[$field] = isset($data[$field]) ? $data[$field] : $definition['default'];
         }
 
         foreach ($this->relations as $relation => $callback) {
@@ -111,11 +107,8 @@ class Mapper
         $entity->setNew(false);
 
         if ($sequence) {
-            if (isset($data[$sequence])) {
-                $this->bind($entity, [$sequence => $data[$sequence]]);
-            } else {
-                $this->bind($entity, [$sequence => $this->connection->lastInsertId()]);
-            }
+            $value = isset($data[$sequence]) ? [$sequence => $data[$sequence]] : $this->connection->lastInsertId();
+            $this->bind($entity, [$sequence => $value]);
         }
     }
 
@@ -127,7 +120,7 @@ class Mapper
         $data = $this->flatten($entity);
         $identifier = [];
         foreach ($this->fields as $field => $definition) {
-            if (!empty($definition['primary']) && isset($data[$field])) {
+            if ($definition['primary'] && isset($data[$field])) {
                 $identifier[$field] = $data[$field];
                 unset($data[$field]);
             }
@@ -153,11 +146,11 @@ class Mapper
         $identifier = [];
         $sequence = null;
         foreach ($this->fields as $field => $definition) {
-            if (!empty($definition['primary']) && isset($data[$field])) {
+            if ($definition['primary'] && isset($data[$field])) {
                 $identifier[$field] = $data[$field];
             }
 
-            if (!empty($definition['sequence'])) {
+            if ($definition['sequence']) {
                 $sequence = $field;
             }
         }
@@ -293,6 +286,19 @@ class Mapper
         foreach ($data as $field => $value) {
             $entity->{'set' . $this->camelize($field)}($value);
         }
+    }
+
+    /**
+     * @param array|string $definition
+     * @return array
+     */
+    protected function field($definition)
+    {
+        return array_merge([
+            'default' => null,
+            'primary' => false,
+            'sequence' => false,
+        ], (array)$definition);
     }
 
     /**
