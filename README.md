@@ -4,7 +4,8 @@ Freckle is a minimalistic Object-Relational-Mapper built on top of Doctrine DBAL
 
 Freckle is heavily inspired by [Spot2](https://github.com/vlucas/spot2).
 
-[![Build Status](https://travis-ci.org/marcojetson/freckle.svg?branch=master)](https://travis-ci.org/marcojetson/freckle)[![Code Climate](https://codeclimate.com/github/marcojetson/freckle/badges/gpa.svg)](https://codeclimate.com/github/marcojetson/freckle)
+[![Build Status](https://travis-ci.org/marcojetson/freckle.svg?branch=master)](https://travis-ci.org/marcojetson/freckle)
+[![Code Climate](https://codeclimate.com/github/marcojetson/freckle/badges/gpa.svg)](https://codeclimate.com/github/marcojetson/freckle)
 
 ## Configuration
 
