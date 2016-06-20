@@ -190,7 +190,7 @@ class Comment extends Freckle\Entity
         'post_id' => 'integer',
       ],
       'relations' => [
-        'post' => function (Mapper $mapper, Comment $coment) {
+        'post' => function (Mapper $mapper, Comment $comment) {
           return $mapper->one(Post::class, ['id' => $comment->getPostId()]);
         },
       ],
