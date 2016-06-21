@@ -167,12 +167,18 @@ class Query implements \Countable, \IteratorAggregate
 
     /**
      * @param array $conditions
+     * @param string $glue
      * @return string
      */
-    protected function clause($conditions)
+    protected function clause($conditions, $glue = 'and')
     {
         $restrictions = [];
         foreach ($conditions as $field => $value) {
+            if ($field === 'and' || $field === 'or') {
+                $restrictions[] = $this->clause($value, $field);
+                continue;
+            }
+
             $parts = explode(' ', $field);
 
             $field = $parts[0];
@@ -186,7 +192,7 @@ class Query implements \Countable, \IteratorAggregate
             $restrictions[] = $operator($this, $field, $value);
         }
 
-        return join(' AND ', $restrictions);
+        return join(' ' . $glue . ' ', $restrictions);
     }
 
     /**

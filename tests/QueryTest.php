@@ -120,4 +120,23 @@ class QueryTest extends TestCase
             $this->assertRegExp('/en/', $manufacturer->getName());
         }
     }
+
+    public function testClauseGroups()
+    {
+        $cars = $this->connection->mapper(Entity\Car::class)->find(['or' => [
+            'and' => ['manufacturer_id' => 1, 'name like' => 'A_ %'],
+            'manufacturer_id' => 4
+        ]]);
+
+        $this->assertEquals(5, sizeof($cars));
+
+        foreach ($cars as $car) {
+            /** @var Entity\Car $car */
+            $this->assertInstanceOf(Entity\Car::class, $car);
+            $this->assertTrue(
+                ($car->getManufacturerId() == 1 && preg_match('/^A. .*/', $car->getName())) ||
+                $car->getManufacturerId() == 4
+            );
+        }
+    }
 }
