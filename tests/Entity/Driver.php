@@ -3,7 +3,7 @@
 namespace Freckle\Entity;
 
 use Freckle\Entity;
-use Freckle\Mapper;
+use Freckle\Query;
 
 /**
  * @method int getId()
@@ -11,7 +11,7 @@ use Freckle\Mapper;
  * @method string getName()
  * @method setName(string $name)
  *
- * @method Car[] getCars()
+ * @method Car[]|Query getCars()
  */
 class Driver extends Entity
 {
@@ -27,9 +27,7 @@ class Driver extends Entity
                 'name' => 'string',
             ],
             'relations' => [
-                'cars' => function (Mapper $mapper, Driver $driver) {
-                    return $mapper->manyThrough(Car::class, 'car_driver.car_id', ['driver_id' => $driver->getId()]);
-                },
+                'cars' => ['many', Car::class, ['driver_id' => 'this.id'], 'through' => 'car_driver.car_id'],
             ],
         ];
     }

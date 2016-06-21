@@ -3,7 +3,7 @@
 namespace Freckle\Entity;
 
 use Freckle\Entity;
-use Freckle\Mapper;
+use Freckle\Mapper\Car as CarMapper;
 
 /**
  * @method int getId()
@@ -15,6 +15,8 @@ use Freckle\Mapper;
  * @method setManufacturerId(int $manufacturerId)
  * 
  * @method Manufacturer getManufacturer()
+ *
+ * @method DataSheet getDataSheet()
  */
 class Car extends Entity
 {
@@ -24,6 +26,7 @@ class Car extends Entity
     public static function definition()
     {
         return [
+            'mapper' => CarMapper::class,
             'table' => 'car',
             'fields' => [
                 'id' => ['integer', 'sequence' => true, 'primary' => true],
@@ -31,9 +34,8 @@ class Car extends Entity
                 'manufacturer_id' => 'integer',
             ],
             'relations' => [
-                'manufacturer' => function (Mapper $mapper, Car $car) {
-                    return $mapper->one(Manufacturer::class, ['id' => $car->getManufacturerId()]);
-                },
+                'manufacturer' => ['one', Manufacturer::class, ['id' => 'this.manufacturer_id']],
+                'data_sheet' => ['one', DataSheet::class, ['car_id' => 'this.id']],
             ],
         ];
     }

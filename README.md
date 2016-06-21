@@ -9,16 +9,16 @@ Freckle is heavily inspired by [Spot2](https://github.com/vlucas/spot2).
 
 ## Table of contents
 
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Entities](#entities)
-- [Data manipulation](#data-manipulation)
-  - [Insert](#insert)
-  - [Update](#update)
-  - [Delete](#delete)
-  - [Retrieval](#retrieval)
-    - [Where operators](#where-operators)
-- [Relations](#relations)
+-   [Installation](#installation)
+-   [Configuration](#configuration)
+-   [Entities](#entities)
+-   [Data manipulation](#data-manipulation)
+    - [Insert](#insert)
+    - [Update](#update)
+    - [Delete](#delete)
+    - [Retrieval](#retrieval)
+      - [Where operators](#where-operators)
+-   [Relations](#relations)
 
 ## Installation
 
@@ -164,7 +164,7 @@ $postMapper->find()->json_exists('properties', 'author');
 
 ## Relations
 
-Relations are just callbacks. Use ```Freckle\Mapper::one()```, ```Freckle\Mapper::many()```, ```Freckle\Mapper::manyThrough()``` to create relations or create your own queries
+Related entity retrieval is supported. Use ```one``` or ```many``` to define them.
 
 ```php
 /**
@@ -190,8 +190,7 @@ class Comment extends Freckle\Entity
         'post_id' => 'integer',
       ],
       'relations' => [
-        'post' => function (Mapper $mapper, Comment $comment) {
-          return $mapper->one(Post::class, ['id' => $comment->getPostId()]);
+        'post' => ['one', Post::class, ['id' => 'this.id']],
         },
       ],
 	];

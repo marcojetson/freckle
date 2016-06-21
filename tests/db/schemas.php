@@ -6,6 +6,11 @@ return [
         'name TEXT NOT NULL',
         'manufacturer_id INTEGER NOT NULL',
     ],
+    'data_sheet' => [
+        'id INTEGER PRIMARY KEY AUTOINCREMENT',
+        'horsepower INTEGER NOT NULL',
+        'car_id INTEGER NOT NULL',
+    ],
     'driver' => [
         'id INTEGER PRIMARY KEY AUTOINCREMENT',
         'name TEXT NOT NULL',

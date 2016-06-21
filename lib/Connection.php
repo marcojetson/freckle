@@ -20,7 +20,9 @@ class Connection extends \Doctrine\DBAL\Connection
     public function mapper($entityClass)
     {
         if (!isset($this->mappers[$entityClass])) {
-            $this->mappers[$entityClass] = new $this->mapperClass($this, $entityClass);
+            $definition = call_user_func([$entityClass, 'definition']);
+            $mapperClass = isset($definition['mapper']) ? $definition['mapper'] : $this->mapperClass;
+            $this->mappers[$entityClass] = new $mapperClass($this, $entityClass);
         }
 
         return $this->mappers[$entityClass];
@@ -35,7 +37,10 @@ class Connection extends \Doctrine\DBAL\Connection
     {
         /** @var Query $query */
         $query = new $this->queryClass($this->createQueryBuilder()->from($table));
-        $query->where($conditions);
+
+        if ($conditions) {
+            $query->where($conditions);
+        }
 
         return $query;
     }

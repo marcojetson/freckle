@@ -6,21 +6,21 @@ class QueryTest extends TestCase
 {
     public function testCount()
     {
-        $manfacturers = $this->connection->mapper(Entity\Manufacturer::class)->find();
-        $this->assertSameSize($this->fixtures['manufacturer'], $manfacturers);
+        $manufacturers = $this->connection->mapper(Entity\Manufacturer::class)->find();
+        $this->assertSameSize($this->fixtures['manufacturer'], $manufacturers);
     }
 
     public function testFirst()
     {
         $manufacturer = $this->connection->mapper(Entity\Manufacturer::class)->find()->first();
         $this->assertInstanceOf(Entity\Manufacturer::class, $manufacturer);
-        $this->assertFalse($manufacturer->isNew());
+        $this->assertFalse($manufacturer->flagged(Entity::FLAG_NEW));
     }
 
     public function testLimit()
     {
-        $manfacturers = $this->connection->mapper(Entity\Manufacturer::class)->find()->limit(2);
-        $this->assertEquals(2, sizeof($manfacturers->run()));
+        $manufacturers = $this->connection->mapper(Entity\Manufacturer::class)->find()->limit(2);
+        $this->assertEquals(2, sizeof($manufacturers->run()));
     }
 
     public function testOffset()
@@ -50,11 +50,11 @@ class QueryTest extends TestCase
     public function testNot()
     {
         $query = $this->connection->mapper(Entity\Manufacturer::class)->find();
-        $manfacturers = $query->not('name', 'Audi');
+        $manufacturers = $query->not('name', 'Audi');
 
-        $this->assertEquals(sizeof($this->fixtures['manufacturer']) - 1, sizeof($manfacturers->run()));
+        $this->assertEquals(sizeof($this->fixtures['manufacturer']) - 1, sizeof($manufacturers->run()));
 
-        foreach ($manfacturers as $manufacturer) {
+        foreach ($manufacturers as $manufacturer) {
             /** @var Entity\Manufacturer $manufacturer */
             $this->assertInstanceOf(Entity\Manufacturer::class, $manufacturer);
             $this->assertNotEquals('Audi', $manufacturer->getName());
@@ -64,9 +64,9 @@ class QueryTest extends TestCase
     public function testGreaterThan()
     {
         $query = $this->connection->mapper(Entity\Manufacturer::class)->find();
-        $manfacturers = $query->gt('stock_price', 6897);
+        $manufacturers = $query->gt('stock_price', 6897);
 
-        foreach ($manfacturers as $manufacturer) {
+        foreach ($manufacturers as $manufacturer) {
             /** @var Entity\Manufacturer $manufacturer */
             $this->assertInstanceOf(Entity\Manufacturer::class, $manufacturer);
             $this->assertGreaterThan(6897, $manufacturer->getStockPrice());
@@ -76,9 +76,9 @@ class QueryTest extends TestCase
     public function testGreaterThanOrEquals()
     {
         $query = $this->connection->mapper(Entity\Manufacturer::class)->find();
-        $manfacturers = $query->gte('stock_price', 6897);
+        $manufacturers = $query->gte('stock_price', 6897);
 
-        foreach ($manfacturers as $manufacturer) {
+        foreach ($manufacturers as $manufacturer) {
             /** @var Entity\Manufacturer $manufacturer */
             $this->assertInstanceOf(Entity\Manufacturer::class, $manufacturer);
             $this->assertGreaterThanOrEqual(6897, $manufacturer->getStockPrice());
@@ -88,9 +88,9 @@ class QueryTest extends TestCase
     public function testLessThan()
     {
         $query = $this->connection->mapper(Entity\Manufacturer::class)->find();
-        $manfacturers = $query->lt('stock_price', 6897);
+        $manufacturers = $query->lt('stock_price', 6897);
 
-        foreach ($manfacturers as $manufacturer) {
+        foreach ($manufacturers as $manufacturer) {
             /** @var Entity\Manufacturer $manufacturer */
             $this->assertInstanceOf(Entity\Manufacturer::class, $manufacturer);
             $this->assertLessThan(6897, $manufacturer->getStockPrice());
@@ -100,9 +100,9 @@ class QueryTest extends TestCase
     public function testLessThanOrEquals()
     {
         $query = $this->connection->mapper(Entity\Manufacturer::class)->find();
-        $manfacturers = $query->lte('stock_price', 6897);
+        $manufacturers = $query->lte('stock_price', 6897);
 
-        foreach ($manfacturers as $manufacturer) {
+        foreach ($manufacturers as $manufacturer) {
             /** @var Entity\Manufacturer $manufacturer */
             $this->assertInstanceOf(Entity\Manufacturer::class, $manufacturer);
             $this->assertLessThanOrEqual(6897, $manufacturer->getStockPrice());
@@ -112,9 +112,9 @@ class QueryTest extends TestCase
     public function testLike()
     {
         $query = $this->connection->mapper(Entity\Manufacturer::class)->find();
-        $manfacturers = $query->like('name', '%en%');
+        $manufacturers = $query->like('name', '%en%');
 
-        foreach ($manfacturers as $manufacturer) {
+        foreach ($manufacturers as $manufacturer) {
             /** @var Entity\Manufacturer $manufacturer */
             $this->assertInstanceOf(Entity\Manufacturer::class, $manufacturer);
             $this->assertRegExp('/en/', $manufacturer->getName());

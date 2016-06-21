@@ -11,6 +11,13 @@ class RelationTest extends TestCase
         $this->assertInstanceOf(Entity\Manufacturer::class, $car->getManufacturer());
     }
 
+    public function testHasOne()
+    {
+        /** @var Entity\Car $car */
+        $car = $this->connection->mapper(Entity\Car::class)->find()->first();
+        $this->assertInstanceOf(Entity\DataSheet::class, $car->getDataSheet());
+    }
+
     public function testHasMany()
     {
         /** @var Entity\Manufacturer $manufacturer */

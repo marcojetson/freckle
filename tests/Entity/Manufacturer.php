@@ -3,7 +3,6 @@
 namespace Freckle\Entity;
 
 use Freckle\Entity;
-use Freckle\Mapper;
 use Freckle\Query;
 
 /**
@@ -36,9 +35,7 @@ class Manufacturer extends Entity
                 'founding_year' => 'integer',
             ],
             'relations' => [
-                'cars' => function (Mapper $mapper, Manufacturer $manufacturer) {
-                    return $mapper->many(Car::class, ['manufacturer_id' => $manufacturer->getId()]);
-                },
+                'cars' => ['many', Car::class, ['manufacturer_id' => 'this.id']],
             ],
         ];
     }

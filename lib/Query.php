@@ -8,6 +8,8 @@ use Freckle\Operator\Operator;
 /**
  * @method $this eq(string $field, mixed $value)
  * @method $this equals(string $field, mixed $value)
+ * @method $this orEq(string $field, mixed $value)
+ * @method $this orEquals(string $field, mixed $value)
  * @method $this not(string $field, mixed $value)
  * @method $this gt(string $field, mixed $value)
  * @method $this greaterThan(string $field, mixed $value)
@@ -47,16 +49,6 @@ class Query implements \Countable, \IteratorAggregate
     }
 
     /**
-     * @param string $table
-     * @return $this
-     */
-    public function from($table)
-    {
-        $this->queryBuilder->from($table);
-        return $this;
-    }
-
-    /**
      * @return Entity|null
      */
     public function first()
@@ -81,13 +73,27 @@ class Query implements \Countable, \IteratorAggregate
      */
     public function where($conditions)
     {
-        foreach ($conditions as $predicate => $value) {
-            $parts = explode(' ', $predicate);
-            $field = $parts[0];
-            $operator = isset($parts[1]) ? $parts[1] : 'eq';
-            $this->$operator($field, $value);
-        }
+        $this->queryBuilder->where($this->clause($conditions));
+        return $this;
+    }
 
+    /**
+     * @param array $conditions
+     * @return $this
+     */
+    public function andWhere($conditions)
+    {
+        $this->queryBuilder->andWhere($this->clause($conditions));
+        return $this;
+    }
+
+    /**
+     * @param array $conditions
+     * @return $this
+     */
+    public function orWhere($conditions)
+    {
+        $this->queryBuilder->orWhere($this->clause($conditions));
         return $this;
     }
 
@@ -116,11 +122,11 @@ class Query implements \Countable, \IteratorAggregate
      */
     public function getIterator()
     {
-        return $this->run();
+        return new \ArrayIterator($this->run());
     }
 
     /**
-     * @return Collection
+     * @return array
      */
     public function run()
     {
@@ -129,7 +135,7 @@ class Query implements \Countable, \IteratorAggregate
         $results = $statement->fetchAll();
         $statement->closeCursor();
 
-        return $this->mapper ? $this->mapper->collection($results) : new \ArrayIterator($results);
+        return $this->mapper ? $this->mapper->collection($results) : $results;
     }
 
     /**
@@ -147,14 +153,48 @@ class Query implements \Countable, \IteratorAggregate
      */
     public function __call($name, $arguments)
     {
-        $operator = Operator::get($name);
+        $operator = $this->operator($name);
+
         if (!$operator) {
-            throw new \BadMethodCallException();
+            throw new \BadMethodCallException('Call to undefined method ' . get_class($this) . '::' . $name . '()');
         }
-        
+
         $condition = $operator($this, ...$arguments);
         $this->queryBuilder->andWhere($condition);
 
         return $this;
+    }
+
+    /**
+     * @param array $conditions
+     * @return string
+     */
+    protected function clause($conditions)
+    {
+        $restrictions = [];
+        foreach ($conditions as $field => $value) {
+            $parts = explode(' ', $field);
+
+            $field = $parts[0];
+            $operatorName = isset($parts[1]) ? $parts[1] : 'eq';
+
+            $operator = $this->operator($operatorName);
+            if (!$operator) {
+                throw new \InvalidArgumentException('Invalid operator ' . $operatorName);
+            }
+
+            $restrictions[] = $operator($this, $field, $value);
+        }
+
+        return join(' AND ', $restrictions);
+    }
+
+    /**
+     * @param string $name
+     * @return Operator
+     */
+    protected function operator($name)
+    {
+        return Operator::get($name);
     }
 }

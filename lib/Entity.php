@@ -4,11 +4,15 @@ namespace Freckle;
 
 abstract class Entity implements EntityInterface
 {
+    const FLAG_NEW = 0x1;
+
+    const FLAG_DIRTY = 0x2;
+
     /** @var array */
     protected $data = [];
 
-    /** @var bool */
-    protected $new = true;
+    /** @var int */
+    protected $flags = 0;
 
     /**
      * @return array
@@ -19,19 +23,28 @@ abstract class Entity implements EntityInterface
     }
 
     /**
+     * @param int $flag
      * @return bool
      */
-    public function isNew()
+    public function flagged($flag)
     {
-        return $this->new;
+        return (bool)($this->flags & $flag);
     }
 
     /**
-     * @param bool $new
+     * @param int $flag
      */
-    public function setNew($new)
+    public function flag($flag)
     {
-        $this->new = $new;
+        $this->flags |= $flag;
+    }
+
+    /**
+     * @param int $flag
+     */
+    public function unflag($flag)
+    {
+        $this->flags &= ~$flag;
     }
 
     /**
@@ -75,7 +88,7 @@ abstract class Entity implements EntityInterface
             return null;
         }
 
-        return is_callable($this->data[$field]) ? $this->data[$field]() : $this->data[$field];
+        return is_callable($this->data[$field]) ? $this->data[$field]($this) : $this->data[$field];
     }
 
     /**
@@ -85,6 +98,7 @@ abstract class Entity implements EntityInterface
     protected function set($field, $value)
     {
         $this->data[$field] = $value;
+        $this->flag(static::FLAG_DIRTY);
     }
 
     /**

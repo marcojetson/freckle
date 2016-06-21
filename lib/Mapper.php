@@ -6,9 +6,6 @@ use Doctrine\DBAL\Types\Type;
 
 class Mapper
 {
-    /** @var string */
-    protected $collectionClass = Collection::class;
-
     /** @var Connection */
     protected $connection;
 
@@ -32,25 +29,10 @@ class Mapper
         $this->entityClass = $entityClass;
 
         $definition = call_user_func([$this->entityClass, 'definition'], $this);
+
         $this->table = $definition['table'];
         $this->fields = array_map([$this, 'field'], $definition['fields']);
         $this->relations = isset($definition['relations']) ? $definition['relations'] : [];
-    }
-
-    /**
-     * @return Connection
-     */
-    public function connection()
-    {
-        return $this->connection;
-    }
-
-    /**
-     * @return string
-     */
-    public function table()
-    {
-        return $this->table;
     }
 
     /**
@@ -67,13 +49,15 @@ class Mapper
             $values[$field] = isset($data[$field]) ? $data[$field] : $definition['default'];
         }
 
-        foreach ($this->relations as $relation => $callback) {
-            $values[$relation] = function () use ($callback, $entity) {
-                return $callback($this, $entity);
+        foreach ($this->relations as $relation => $definition) {
+            $values[$relation] = function (Entity $entity) use ($definition) {
+                $query = $this->relation($entity, $definition);
+                return $definition[0] === 'one' ? $query->first() : $query;
             };
         }
 
         $this->bind($entity, $values);
+        $entity->flag(Entity::FLAG_NEW);
 
         return $entity;
     }
@@ -96,6 +80,7 @@ class Mapper
     {
         $data = $this->flatten($entity);
         $sequence = null;
+
         foreach ($this->fields as $field => $definition) {
             if (!empty($definition['sequence']) && empty($data[$field])) {
                 $sequence = $field;
@@ -103,8 +88,10 @@ class Mapper
             }
         }
 
-        $this->connection->insert($this->table(), $data);
-        $entity->setNew(false);
+        $this->connection->insert($this->table, $data);
+
+        $entity->unflag(Entity::FLAG_NEW);
+        $entity->unflag(Entity::FLAG_DIRTY);
 
         if ($sequence) {
             $value = isset($data[$sequence]) ? [$sequence => $data[$sequence]] : $this->connection->lastInsertId();
@@ -117,8 +104,13 @@ class Mapper
      */
     public function update(Entity $entity)
     {
+        if (!$entity->flagged(Entity::FLAG_DIRTY)) {
+            return;
+        }
+
         $data = $this->flatten($entity);
         $identifier = [];
+
         foreach ($this->fields as $field => $definition) {
             if ($definition['primary'] && isset($data[$field])) {
                 $identifier[$field] = $data[$field];
@@ -126,7 +118,7 @@ class Mapper
             }
         }
 
-        $this->connection->update($this->table(), $data, $identifier);
+        $this->connection->update($this->table, $data, $identifier);
     }
 
     /**
@@ -134,7 +126,7 @@ class Mapper
      */
     public function save(Entity $entity)
     {
-        $this[$entity->isNew() ? 'insert' : 'update']($entity);
+        $this[$entity->flagged(Entity::FLAG_NEW) ? 'insert' : 'update']($entity);
     }
 
     /**
@@ -145,6 +137,7 @@ class Mapper
         $data = $this->flatten($entity);
         $identifier = [];
         $sequence = null;
+
         foreach ($this->fields as $field => $definition) {
             if ($definition['primary'] && isset($data[$field])) {
                 $identifier[$field] = $data[$field];
@@ -155,8 +148,8 @@ class Mapper
             }
         }
 
-        $this->connection->delete($this->table(), $identifier);
-        $entity->setNew(true);
+        $this->connection->delete($this->table, $identifier);
+        $entity->flag(Entity::FLAG_NEW);
 
         if ($sequence) {
             $this->bind($entity, [$sequence => null]);
@@ -169,12 +162,12 @@ class Mapper
      */
     public function find(array $conditions = [])
     {
-        return $this->connection->select($this->table(), $conditions)->mapper($this);
+        return $this->connection->select($this->table, $conditions)->mapper($this);
     }
 
     /**
      * @param array $results
-     * @return Collection
+     * @return array
      */
     public function collection(array $results)
     {
@@ -182,62 +175,12 @@ class Mapper
         foreach ($results as $result) {
             $entity = $this->entity();
             $this->expand($entity, $result);
-            $entity->setNew(false);
+            $entity->unflag(Entity::FLAG_NEW);
 
             $entities[] = $entity;
         }
 
-        return new $this->collectionClass($entities);
-    }
-
-    /**
-     * @param string $entityClass
-     * @param array $conditions
-     * @return Entity|null
-     */
-    public function one($entityClass, array $conditions)
-    {
-        if (!is_subclass_of($entityClass, Entity::class)) {
-            throw new \InvalidArgumentException('Related $entityClass must be a subclass of ' . Entity::class);
-        }
-
-        return $this->connection->mapper($entityClass)->find($conditions)->first();
-    }
-
-    /**
-     * @param string $entityClass
-     * @param array $conditions
-     * @return Query
-     */
-    public function many($entityClass, array $conditions)
-    {
-        if (!is_subclass_of($entityClass, Entity::class)) {
-            throw new \InvalidArgumentException('Related $entityClass must be a subclass of ' . Entity::class);
-        }
-
-        return $this->connection->mapper($entityClass)->find($conditions);
-    }
-
-    /**
-     * @param string $entityClass
-     * @param string $through
-     * @param array $conditions
-     * @param string $field
-     * @return Query
-     */
-    public function manyThrough($entityClass, $through, array $conditions, $field = 'id')
-    {
-        if (!is_subclass_of($entityClass, Entity::class)) {
-            throw new \InvalidArgumentException('Related $entityClass must be a subclass of ' . Entity::class);
-        }
-
-        $values = [];
-        list($tableThrough, $fieldThrough) = explode('.', $through);
-        foreach ($this->connection->select($tableThrough, $conditions) as $data) {
-            $values[] = $data[$fieldThrough];
-        }
-
-        return $this->connection->mapper($entityClass)->find([$field => $values]);
+        return $entities;
     }
 
     /**
@@ -248,7 +191,8 @@ class Mapper
     {
         $result = [];
         $fields = $this->fields;
-        $platform = $this->connection()->getDatabasePlatform();
+        $platform = $this->connection->getDatabasePlatform();
+
         foreach ($data as $field => $value) {
             if (!isset($fields[$field])) {
                 continue;
@@ -269,7 +213,8 @@ class Mapper
         $result = [];
         $fields = $this->fields;
         $data = array_intersect_key($entity->data(), $fields);
-        $platform = $this->connection()->getDatabasePlatform();
+        $platform = $this->connection->getDatabasePlatform();
+
         foreach ($data as $field => $value) {
             $result[$field] = Type::getType($fields[$field][0])->convertToDatabaseValue($value, $platform);
         }
@@ -299,6 +244,40 @@ class Mapper
             'primary' => false,
             'sequence' => false,
         ], (array)$definition);
+    }
+
+    /**
+     * @param Entity $entity
+     * @param $definition
+     * @return Query
+     */
+    protected function relation(Entity $entity, $definition)
+    {
+        list(, $entityClass, $conditions) = $definition;
+
+        if (!is_subclass_of($entityClass, Entity::class)) {
+            throw new \InvalidArgumentException('Related $entityClass must be a subclass of ' . Entity::class);
+        }
+
+        foreach ($conditions as $key => $value) {
+            if (!is_string($value) || !preg_match('/^this\.(?P<field>.+)$/', $value, $match)) {
+                continue;
+            }
+
+            $conditions[$key] = $entity->{'get' . $this->camelize($match['field'])}();
+        }
+
+        if (isset($definition['through'])) {
+            $values = [];
+            list($tableThrough, $fieldThrough) = explode('.', $definition['through']);
+            foreach ($this->connection->select($tableThrough, $conditions) as $data) {
+                $values[] = $data[$fieldThrough];
+            }
+
+            $conditions = [isset($definition['field']) ? $definition['field'] : 'id' => $values];
+        }
+
+        return $this->connection->mapper($entityClass)->find($conditions);
     }
 
     /**

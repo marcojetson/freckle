@@ -16,7 +16,7 @@ class MapperTest extends TestCase
         $manufacturer = $mapper->entity($data);
 
         $this->assertInstanceOf(Entity::class, $manufacturer);
-        $this->assertTrue($manufacturer->isNew());
+        $this->assertTrue($manufacturer->flagged(Entity::FLAG_NEW));
 
         $stored = $manufacturer->data();
         unset($stored['id'], $stored['cars']);
@@ -36,7 +36,7 @@ class MapperTest extends TestCase
         $manufacturer = $mapper->create($data);
 
         $this->assertInstanceOf(Entity::class, $manufacturer);
-        $this->assertFalse($manufacturer->isNew());
+        $this->assertFalse($manufacturer->flagged(Entity::FLAG_NEW));
         
         $stored = $mapper->find(['id' => $manufacturer->getId()])->first()->data();
         unset($stored['id'], $stored['cars']);
@@ -58,7 +58,7 @@ class MapperTest extends TestCase
 
         $mapper->insert($manufacturer);
 
-        $this->assertFalse($manufacturer->isNew());
+        $this->assertFalse($manufacturer->flagged(Entity::FLAG_NEW));
         $this->assertInternalType('numeric', $manufacturer->getId());
 
         $stored = $mapper->find(['id' => $manufacturer->getId()])->first()->data();
@@ -103,7 +103,7 @@ class MapperTest extends TestCase
         $id = $manufacturer->getId();
         $mapper->delete($manufacturer);
 
-        $this->assertTrue($manufacturer->isNew());
+        $this->assertTrue($manufacturer->flagged(Entity::FLAG_NEW));
         $this->assertNull($manufacturer->getId());
         $this->assertNull($mapper->find(['id' => $manufacturer->getId()])->first());
     }
