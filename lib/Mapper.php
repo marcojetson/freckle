@@ -44,19 +44,22 @@ class Mapper
         /** @var Entity $entity */
         $entity = new $this->entityClass();
 
-        $values = [];
         foreach ($this->fields as $field => $definition) {
-            $values[$field] = isset($data[$field]) ? $data[$field] : $definition['default'];
+            if (isset($data[$field]) || !isset($definition['default'])) {
+                continue;
+            }
+
+            $data[$field] = is_callable($definition['default']) ? $definition['default']() : $definition['default'];
         }
 
         foreach ($this->relations as $relation => $definition) {
-            $values[$relation] = function (Entity $entity) use ($definition) {
+            $data[$relation] = function (Entity $entity) use ($definition) {
                 $query = $this->relation($entity, $definition);
                 return $definition[0] === 'one' ? $query->first() : $query;
             };
         }
 
-        $this->bind($entity, $values);
+        $this->bind($entity, $data);
         $entity->flag(Entity::FLAG_NEW);
 
         return $entity;
@@ -66,7 +69,7 @@ class Mapper
      * @param array $data
      * @return Entity
      */
-    public function create(array $data = [])
+    public function create(array $data)
     {
         $entity = $this->entity($data);
         $this->insert($entity);
@@ -94,7 +97,8 @@ class Mapper
         $entity->unflag(Entity::FLAG_DIRTY);
 
         if ($sequence) {
-            $value = isset($data[$sequence]) ? [$sequence => $data[$sequence]] : $this->connection->lastInsertId();
+            $field = $this->fields[$sequence];
+            $value = isset($data[$sequence]) ? $data[$sequence] : $this->connection->lastInsertId($field['sequence']);
             $this->bind($entity, [$sequence => $value]);
         }
     }
@@ -126,7 +130,21 @@ class Mapper
      */
     public function save(Entity $entity)
     {
-        $this[$entity->flagged(Entity::FLAG_NEW) ? 'insert' : 'update']($entity);
+        $this->{$entity->flagged(Entity::FLAG_NEW) ? 'insert' : 'update'}($entity);
+    }
+
+    /**
+     * @param array $data
+     * @param array $conditions
+     * @return Entity
+     */
+    public function upsert(array $data = [], array $conditions = [])
+    {
+        $entity = $this->find($conditions)->first() ? : $this->entity();
+        $this->bind($entity, $data);
+        $this->save($entity);
+
+        return $entity;
     }
 
     /**
@@ -275,6 +293,10 @@ class Mapper
             }
 
             $conditions = [isset($definition['field']) ? $definition['field'] : 'id' => $values];
+        }
+
+        if (isset($definition['eager'])) {
+            $this->eager[$entityClass][] = $conditions;
         }
 
         return $this->connection->mapper($entityClass)->find($conditions);

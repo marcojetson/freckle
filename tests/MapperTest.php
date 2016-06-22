@@ -90,6 +90,49 @@ class MapperTest extends TestCase
         $this->assertEquals($data, $stored);
     }
 
+    public function testSave()
+    {
+        $data = [
+            'name' => 'DeLorean Motor Company',
+            'stock_price' => 0,
+            'founding_year' => 1975,
+        ];
+
+        $mapper = $this->connection->mapper(Entity\Manufacturer::class);
+        /** @var Entity\Manufacturer $manufacturer */
+        $manufacturer = $mapper->entity($data);
+
+        $this->assertTrue($manufacturer->flagged(Entity::FLAG_NEW));
+        $this->assertNull($manufacturer->getId());
+
+        $mapper->save($manufacturer);
+
+        $this->assertFalse($manufacturer->flagged(Entity::FLAG_NEW));
+        $this->assertNotNull($manufacturer->getId());
+
+        $id = $manufacturer->getId();
+        $manufacturer->setStockPrice(999999);
+        $mapper->update($manufacturer);
+
+        $this->assertEquals($id, $manufacturer->getId());
+    }
+
+    public function testUpsert()
+    {
+        $data = $this->fixtures['manufacturer'][0];
+        $conditions = ['name' => $data['name']];
+
+        $mapper = $this->connection->mapper(Entity\Manufacturer::class);
+        /** @var Entity\Manufacturer $manufacturer */
+        $mapper->upsert($data, $conditions);
+
+        $manufacturers = $mapper->find($conditions);
+        $this->assertCount(1, $manufacturers);
+
+        $mapper->upsert($data, ['name' => 'not found']);
+        $this->assertCount(2, $manufacturers);
+    }
+
     public function testDelete()
     {
         $mapper = $this->connection->mapper(Entity\Manufacturer::class);
@@ -100,11 +143,24 @@ class MapperTest extends TestCase
             'founding_year' => 1975,
         ]);
 
-        $id = $manufacturer->getId();
         $mapper->delete($manufacturer);
 
         $this->assertTrue($manufacturer->flagged(Entity::FLAG_NEW));
         $this->assertNull($manufacturer->getId());
         $this->assertNull($mapper->find(['id' => $manufacturer->getId()])->first());
+    }
+
+    public function testInsertWithSequenceName()
+    {
+        $sequence = Entity\Car::definition()['fields']['id']['sequence'];
+
+        /** @var Connection|\PHPUnit_Framework_MockObject_MockObject $connection */
+        $connection = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock();
+
+        $connection->expects($this->once())->method('lastInsertId')->with($sequence);
+        $mapper = new Mapper($connection, Entity\Car::class);
+
+        $entity = $mapper->entity();
+        $mapper->insert($entity);
     }
 }

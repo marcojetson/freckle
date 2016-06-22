@@ -29,7 +29,7 @@ class Car extends Entity
             'mapper' => CarMapper::class,
             'table' => 'car',
             'fields' => [
-                'id' => ['integer', 'sequence' => true, 'primary' => true],
+                'id' => ['integer', 'sequence' => 'table_id_seq', 'primary' => true],
                 'name' => 'string',
                 'manufacturer_id' => 'integer',
             ],

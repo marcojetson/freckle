@@ -20,7 +20,7 @@ class QueryTest extends TestCase
     public function testLimit()
     {
         $manufacturers = $this->connection->mapper(Entity\Manufacturer::class)->find()->limit(2);
-        $this->assertEquals(2, sizeof($manufacturers->run()));
+        $this->assertCount(2, $manufacturers->run());
     }
 
     public function testOffset()
@@ -52,7 +52,7 @@ class QueryTest extends TestCase
         $query = $this->connection->mapper(Entity\Manufacturer::class)->find();
         $manufacturers = $query->not('name', 'Audi');
 
-        $this->assertEquals(sizeof($this->fixtures['manufacturer']) - 1, sizeof($manufacturers->run()));
+        $this->assertCount(sizeof($this->fixtures['manufacturer']) - 1, $manufacturers->run());
 
         foreach ($manufacturers as $manufacturer) {
             /** @var Entity\Manufacturer $manufacturer */

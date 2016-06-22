@@ -9,16 +9,18 @@ Freckle is heavily inspired by [Spot2](https://github.com/vlucas/spot2).
 
 ## Table of contents
 
--   [Installation](#installation)
--   [Configuration](#configuration)
--   [Entities](#entities)
--   [Data manipulation](#data-manipulation)
-    - [Insert](#insert)
-    - [Update](#update)
-    - [Delete](#delete)
-    - [Retrieval](#retrieval)
-      - [Where operators](#where-operators)
--   [Relations](#relations)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Entities](#entities)
+  - [Definition](#entities-definition)
+- [Data manipulation](#data-manipulation)
+  - [Insert](#insert)
+  - [Update](#update)
+  - [Delete](#delete)
+  - [Retrieval](#retrieval)
+    - [Where operators](#where-operators)
+- [Relations](#relations)
+  - [Definition](#relations-definition)
 
 ## Installation
 
@@ -66,6 +68,20 @@ class Post extends Freckle\Entity
 	];
   }
 }
+```
+
+### <a name="entities-definition"></a>Definition
+
+Defining an entity requires a table name and its fields.
+Fields are defined by an array with mandatory positional parameters and optional named parameters.
+
+```php
+[
+    string $type,
+    bool|string sequence=false, // specify sequence name if required by database
+    bool primary=false,
+    mixed default=null, // default value, callables supported!
+]
 ```
 
 ## Data manipulation
@@ -164,7 +180,7 @@ $postMapper->find()->json_exists('properties', 'author');
 
 ## Relations
 
-Related entity retrieval is supported. Use ```one``` or ```many``` to define them.
+Related entity retrieval is supported.
 
 ```php
 /**
@@ -197,3 +213,18 @@ class Comment extends Freckle\Entity
   }
 }
 ```
+
+### <a name="relations-definition"></a>Definition
+
+In the same fashion of fields, defining a relation consist in an array with mandatory positional parameters and optional named parameters.
+
+```php
+[
+    string $type,
+    string $entityClass,
+    array $conditions,
+    string through=null, // "table.column" for many-to-many relations
+    string field='id', // related entity primary column
+]
+```
+
