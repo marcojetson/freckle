@@ -128,7 +128,10 @@ class QueryTest extends TestCase
             'manufacturer_id' => 4
         ]]);
 
-        $this->assertEquals(5, sizeof($cars));
+        $this->assertSameSize(array_filter($this->fixtures['car'], function ($car) {
+            return ($car['manufacturer_id'] == 1 && preg_match('/^A. .*/', $car['name'])) ||
+            $car['manufacturer_id'] == 4;
+        }), $cars);
 
         foreach ($cars as $car) {
             /** @var Entity\Car $car */
