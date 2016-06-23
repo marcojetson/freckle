@@ -155,12 +155,44 @@ class MapperTest extends TestCase
         $sequence = Entity\Car::definition()['fields']['id']['sequence'];
 
         /** @var Connection|\PHPUnit_Framework_MockObject_MockObject $connection */
-        $connection = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock();
+        $connection = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->setMethodsExcept(['mapper'])->getMock();
 
         $connection->expects($this->once())->method('lastInsertId')->with($sequence);
-        $mapper = new Mapper($connection, Entity\Car::class);
+        $mapper = $connection->mapper(Entity\Car::class);
 
         $entity = $mapper->entity();
         $mapper->insert($entity);
+    }
+
+    public function testIdentityMap()
+    {
+        $mapper = $this->connection->mapper(Entity\Manufacturer::class);
+
+        /** @var Entity\Manufacturer $manufacturer1 */
+        $manufacturer1 = $mapper->first(['id' => 1]);
+        /** @var Entity\Manufacturer $manufacturer2 */
+        $manufacturer2 = $mapper->first(['id' => 1]);
+        /** @var Entity\Manufacturer $manufacturer3 */
+        $manufacturer3 = $mapper->find(['id' => 1])->first();
+
+        $this->assertSame($manufacturer1, $manufacturer2);
+        $this->assertSame($manufacturer1, $manufacturer3);
+
+        /** @var Entity\Car $car1 */
+        $car1 = $manufacturer1->getCars()->first();
+        $car2 = $manufacturer2->getCars()->first();
+        $car3 = $manufacturer3->getCars()->first();
+
+        $car4 = $this->connection->mapper(Entity\Car::class)->first(['id' => $car1->getId()]);
+
+        $this->assertSame($car1, $car2);
+        $this->assertSame($car1, $car3);
+        $this->assertSame($car1, $car4);
+
+        $mapper->delete($manufacturer1);
+
+        $this->assertNull($manufacturer1->getId());
+        $this->assertNull($manufacturer2->getId());
+        $this->assertNull($manufacturer3->getId());
     }
 }

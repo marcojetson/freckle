@@ -5,7 +5,7 @@ namespace Freckle;
 class Connection extends \Doctrine\DBAL\Connection
 {
     /** @var string */
-    protected $mapperClass = Mapper::class;
+    protected $mappingClass = Mapping::class;
 
     /** @var Mapper[] */
     protected $mappers;
@@ -20,9 +20,10 @@ class Connection extends \Doctrine\DBAL\Connection
     public function mapper($entityClass)
     {
         if (!isset($this->mappers[$entityClass])) {
-            $definition = call_user_func([$entityClass, 'definition']);
-            $mapperClass = isset($definition['mapper']) ? $definition['mapper'] : $this->mapperClass;
-            $this->mappers[$entityClass] = new $mapperClass($this, $entityClass);
+            /** @var Mapping $mapping */
+            $mapping = new $this->mappingClass($entityClass);
+            $mapperClass = $mapping->mapperClass();
+            $this->mappers[$entityClass] = new $mapperClass($this, $mapping);
         }
 
         return $this->mappers[$entityClass];
