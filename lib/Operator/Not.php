@@ -5,7 +5,7 @@ namespace Freckle\Operator;
 class Not extends Equals
 {
     /** @var string */
-    protected $in = '%s NOT IN (%s)';
+    protected $array = '%s NOT IN (%s)';
 
     /** @var string */
     protected $null = '%s IS NOT NULL';

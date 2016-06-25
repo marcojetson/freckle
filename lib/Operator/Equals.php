@@ -8,7 +8,7 @@ use Freckle\Query;
 class Equals extends Operator
 {
     /** @var string */
-    protected $in = '%s IN (%s)';
+    protected $array = '%s IN (%s)';
 
     /** @var string */
     protected $null = '%s IS NULL';
@@ -22,7 +22,7 @@ class Equals extends Operator
     public function __invoke(Query $query, $column, $value = null)
     {
         if (is_array($value) && !empty($value)) {
-            return sprintf($this->in, $column, $query->parameter($value, Connection::PARAM_STR_ARRAY));
+            return sprintf($this->array, $column, $query->parameter($value, Connection::PARAM_STR_ARRAY));
         }
 
         if ($value === null || (is_array($value) && empty($value))) {
