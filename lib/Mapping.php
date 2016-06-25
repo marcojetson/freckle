@@ -32,25 +32,14 @@ class Mapping
      */
     public function __construct(array $definition)
     {
-        if (!isset($definition['class']) && isset($definition['table'])) {
-            $namespace = isset($definition['namespace']) ? trim($definition['namespace'], '\\') . '\\' : '';
-            $definition['class'] = $namespace . $this->camelize($definition['table']);
-        }
+        $this->entityClass = $this->resolveEntityClass($definition);
+        $this->table = $this->resolveTable($definition);
 
-        if (isset($definition['class']) && !isset($definition['table'])) {
-            $definition['table'] = $this->uncamelize($definition['class']);
-        }
-
-        $this->entityClass = $definition['class'];
-
-        if (isset($definition['mapper'])) {
-            $this->mapperClass = $definition['mapper'];
-        }
-
-        $this->table = $definition['table'];
+        isset($definition['mapper']) && $this->mapperClass = $definition['mapper'];
 
         $this->fields = [];
         $this->identifier = [];
+        
         foreach ($definition['fields'] as $field => $options) {
             $options = array_merge([
                 'default' => null,
@@ -204,5 +193,32 @@ class {$class} extends \Freckle\Entity
 }
 
 CODE;
+    }
+
+    /**
+     * @param array $definition
+     * @return string
+     */
+    protected function resolveEntityClass(array $definition)
+    {
+        if (isset($definition['class'])) {
+            return $definition['class'];
+        }
+
+        $namespace = isset($definition['namespace']) ? trim($definition['namespace'], '\\') . '\\' : '';
+        return $namespace . $this->camelize($definition['table']);
+    }
+
+    /**
+     * @param array $definition
+     * @return string
+     */
+    protected function resolveTable(array $definition)
+    {
+        if (isset($definition['table'])) {
+            return $definition['table'];
+        }
+
+        return $this->uncamelize($definition['class']);
     }
 }
