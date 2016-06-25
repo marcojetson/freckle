@@ -4,6 +4,8 @@ namespace Freckle;
 
 abstract class Entity implements EntityInterface
 {
+    use Partial\Camelize;
+
     const FLAG_NEW = 0x1;
 
     const FLAG_DIRTY = 0x2;
@@ -99,14 +101,5 @@ abstract class Entity implements EntityInterface
     {
         $this->data[$field] = $value;
         $this->flag(static::FLAG_DIRTY);
-    }
-
-    /**
-     * @param string $str
-     * @return string
-     */
-    protected function uncamelize($str)
-    {
-        return strtolower(preg_replace('/(?<!^)([A-Z])/', '_\1', $str));
     }
 }

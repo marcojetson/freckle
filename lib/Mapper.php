@@ -6,6 +6,8 @@ use Doctrine\DBAL\Types\Type;
 
 class Mapper
 {
+    use Partial\Camelize;
+    
     /** @var Connection */
     protected $connection;
 
@@ -288,14 +290,5 @@ class Mapper
         ksort($data);
         $data = array_intersect_key($data, $this->mapping->identifier());
         return http_build_query($data);
-    }
-
-    /**
-     * @param string $str
-     * @return string
-     */
-    protected function camelize($str)
-    {
-        return str_replace(' ', '', ucwords(str_replace('_', ' ', $str)));
     }
 }

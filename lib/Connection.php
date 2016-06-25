@@ -21,7 +21,7 @@ class Connection extends \Doctrine\DBAL\Connection
     {
         if (!isset($this->mappers[$entityClass])) {
             /** @var Mapping $mapping */
-            $mapping = new $this->mappingClass($entityClass);
+            $mapping = call_user_func([$this->mappingClass, 'fromClass'], $entityClass);
             $mapperClass = $mapping->mapperClass();
             $this->mappers[$entityClass] = new $mapperClass($this, $mapping);
         }
@@ -44,5 +44,58 @@ class Connection extends \Doctrine\DBAL\Connection
         }
 
         return $query;
+    }
+
+    /**
+     * @param array $options
+     * @return Mapping[]
+     */
+    public function generate(array $options = [])
+    {
+        $options = array_merge([
+            'namespace' => null,
+        ], $options);
+
+        $mappings = [];
+
+        $schemaManager = $this->getSchemaManager();
+        
+        foreach ($schemaManager->listTables() as $table) {
+            $definition = [
+                'namespace' => $options['namespace'],
+                'table' => $table->getName(),
+                'fields' => [],
+            ];
+            
+            foreach ($table->getColumns() as $column) {
+                $field = $column->getName();
+
+                $definition['fields'][$field] = $column->getType()->getName();
+
+                if ($column->getAutoincrement()) {
+                    $definition['fields'][$field] = array_merge((array)$definition['fields'][$field], [
+                        'sequence' => true,
+                    ]);
+                }
+            }
+
+            foreach ($schemaManager->listTableIndexes($definition['table']) as $index) {
+                foreach ($index->getColumns() as $field) {
+                    if (!isset($definition['fields'][$field])) {
+                        continue;
+                    }
+
+                    if ($index->isPrimary()) {
+                        $definition['fields'][$field] = array_merge((array)$definition['fields'][$field], [
+                            'primary' => true,
+                        ]);
+                    }
+                }
+            }
+
+            $mappings[] = new $this->mappingClass($definition);
+        }
+
+        return $mappings;
     }
 }

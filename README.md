@@ -13,6 +13,7 @@ Freckle is heavily inspired by [Spot2](https://github.com/vlucas/spot2).
 - [Configuration](#configuration)
 - [Entities](#entities)
   - [Definition](#entities-definition)
+  - [Generation](#entities-generation)
 - [Data manipulation](#data-manipulation)
   - [Insert](#insert)
   - [Update](#update)
@@ -82,6 +83,16 @@ Fields are defined by an array with mandatory positional parameters and optional
     bool primary=false,
     mixed default=null, // default value, callables supported!
 ]
+```
+
+### <a name="entities-generation"></a>Generation
+
+Freckle is able to generate entities for you. Use ```Freckle\Connection::import()``` to automatically generate mappings for your tables.
+
+```php
+foreach ($connection->generate() as $mapping) {
+    file_put_contents($mapping->entityClass() . '.php', (string)$mapping);
+}
 ```
 
 ## Data manipulation
