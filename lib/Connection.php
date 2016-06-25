@@ -56,10 +56,9 @@ class Connection extends \Doctrine\DBAL\Connection
             'namespace' => null,
         ], $options);
 
-        $mappings = [];
-
         $schemaManager = $this->getSchemaManager();
-        
+
+        $definitions = [];
         foreach ($schemaManager->listTables() as $table) {
             $definition = [
                 'namespace' => $options['namespace'],
@@ -93,6 +92,11 @@ class Connection extends \Doctrine\DBAL\Connection
                 }
             }
 
+            $definitions[$definition['table']] = $definition;
+        }
+
+        $mappings = [];
+        foreach ($definitions as $definition) {
             $mappings[] = new $this->mappingClass($definition);
         }
 

@@ -2,6 +2,8 @@
 
 namespace Freckle;
 
+use Doctrine\DBAL\Types\Type;
+
 class Mapping
 {
     use Partial\Camelize;
@@ -26,6 +28,29 @@ class Mapping
 
     /** @var array */
     protected $relations;
+
+    /** @var array */
+    protected static $internalTypes = [
+        Type::TARRAY => 'array',
+        Type::SIMPLE_ARRAY => 'array',
+        Type::JSON_ARRAY => 'array',
+        Type::OBJECT => 'object',
+        Type::BOOLEAN => 'bool',
+        Type::INTEGER => 'int',
+        Type::SMALLINT => 'int',
+        Type::BIGINT => 'int',
+        Type::STRING => 'string',
+        Type::TEXT => 'string',
+        Type::DATETIME => '\DateTime',
+        Type::DATETIMETZ => '\DateTime',
+        Type::DATE => '\DateTime',
+        Type::TIME => '\DateTime',
+        Type::DECIMAL => 'float',
+        Type::FLOAT => 'float',
+        Type::BINARY => 'resource',
+        Type::BLOB => 'resource',
+        Type::GUID => 'string',
+    ];
 
     /**
      * @param array $definition
@@ -151,7 +176,7 @@ class Mapping
         $fields = '';
         $header .= '/**' . PHP_EOL . ' * Class ' . $class . PHP_EOL;
         foreach ($this->fields as $field => $definition) {
-            $internalType = 'mixed';
+            $internalType = isset(static::$internalTypes[$definition[0]]) ? static::$internalTypes[$definition[0]] : 'mixed';
 
             $header .= ' *' . PHP_EOL;
             $header .= ' * @method ' . $internalType . ' get' . $definition['property'] . '()' . PHP_EOL;
