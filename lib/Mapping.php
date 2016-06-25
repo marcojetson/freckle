@@ -16,19 +16,16 @@ class Mapping
     protected $table;
 
     /** @var array */
-    protected $fields = [];
+    protected $fields;
 
-    /** @var string */
+    /** @var array */
     protected $sequence;
 
-    /** @var string */
-    protected $sequenceName;
+    /** @var array */
+    protected $identifier;
 
     /** @var array */
-    protected $identifier = [];
-
-    /** @var array */
-    protected $relations = [];
+    protected $relations;
 
     /**
      * @param array $definition
@@ -52,6 +49,8 @@ class Mapping
 
         $this->table = $definition['table'];
 
+        $this->fields = [];
+        $this->identifier = [];
         foreach ($definition['fields'] as $field => $options) {
             $options = array_merge([
                 'default' => null,
@@ -67,14 +66,14 @@ class Mapping
             }
 
             if ($options['sequence']) {
-                $this->sequence = $field;
-                $this->sequenceName = $options['sequence'];
+                $this->sequence = [
+                    'field' => $field,
+                    'name' => $options['sequence'],
+                ];
             }
         }
 
-        if (isset($definition['relations'])) {
-            $this->relations = $definition['relations'];
-        }
+        $this->relations = isset($definition['relations']) ? $definition['relations'] : [];
     }
 
     /**
@@ -123,19 +122,11 @@ class Mapping
     }
 
     /**
-     * @return string
+     * @return array
      */
     public function sequence()
     {
         return $this->sequence;
-    }
-
-    /**
-     * @return string
-     */
-    public function sequenceName()
-    {
-        return $this->sequenceName;
     }
 
     /**
@@ -177,7 +168,7 @@ class Mapping
             $header .= ' * @method ' . $internalType . ' get' . $definition['property'] . '()' . PHP_EOL;
             $header .= ' * @method set' . $definition['property'] . '(' . $internalType . ' $' . lcfirst($definition['property']) . ')' . PHP_EOL;
 
-            $fields .= PHP_EOL . str_repeat(' ', 16) . '\'\'' . $field . '\' => [\'' . $definition[0] . '\'';
+            $fields .= PHP_EOL . str_repeat(' ', 16) . '\'' . $field . '\' => [\'' . $definition[0] . '\'';
 
             if ($definition['sequence']) {
                 $sequence = is_string($definition['sequence']) ? '\'' . $definition['sequence'] . '\'' : 'true';

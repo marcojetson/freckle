@@ -7,7 +7,7 @@ use Doctrine\DBAL\Types\Type;
 class Mapper
 {
     use Partial\Camelize;
-    
+
     /** @var Connection */
     protected $connection;
 
@@ -80,8 +80,8 @@ class Mapper
 
         $sequence = $this->mapping->sequence();
         if ($sequence) {
-            $value = isset($data[$sequence]) ? $data[$sequence] : $this->connection->lastInsertId($this->mapping->sequenceName());
-            $this->bind($entity, [$sequence => $value]);
+            $value = isset($data[$sequence['field']]) ? $data[$sequence['field']] : $this->connection->lastInsertId($sequence['name']);
+            $this->bind($entity, [$sequence['field'] => $value]);
         }
 
         $this->identityMap[$this->key($data)] = $entity;
@@ -147,7 +147,7 @@ class Mapper
 
         $sequence = $this->mapping->sequence();
         if ($sequence) {
-            $this->bind($entity, [$sequence => null]);
+            $this->bind($entity, [$sequence['field'] => null]);
         }
 
         unset($this->identityMap[$this->key($data)]);
