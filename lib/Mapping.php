@@ -21,10 +21,13 @@ class Mapping
     protected $fields;
 
     /** @var array */
-    protected $sequence;
+    protected $primary;
 
     /** @var array */
-    protected $identifier;
+    protected $required;
+
+    /** @var array */
+    protected $sequence;
 
     /** @var array */
     protected $relations;
@@ -63,12 +66,14 @@ class Mapping
         isset($definition['mapper']) && $this->mapperClass = $definition['mapper'];
 
         $this->fields = [];
-        $this->identifier = [];
+        $this->primary = [];
+        $this->required = [];
         
         foreach ($definition['fields'] as $field => $options) {
             $options = array_merge([
                 'default' => null,
                 'primary' => false,
+                'require' => false,
                 'sequence' => false,
                 'property' => $this->camelize($field),
             ], (array)$options);
@@ -76,7 +81,11 @@ class Mapping
             $this->fields[$field] = $options;
 
             if ($options['primary']) {
-                $this->identifier[$field] = $options;
+                $this->primary[$field] = $options;
+            }
+
+            if ($options['require'] || ($options['primary'] && !$options['sequence'])) {
+                $this->required[] = $field;
             }
 
             if ($options['sequence']) {
@@ -138,6 +147,14 @@ class Mapping
     /**
      * @return array
      */
+    public function required()
+    {
+        return $this->required;
+    }
+
+    /**
+     * @return array
+     */
     public function sequence()
     {
         return $this->sequence;
@@ -146,9 +163,9 @@ class Mapping
     /**
      * @return array
      */
-    public function identifier()
+    public function primary()
     {
-        return $this->identifier;
+        return $this->primary;
     }
 
     /**
@@ -169,10 +186,6 @@ class Mapping
         $parts = explode('\\', $this->entityClass());
         $class = $parts[sizeof($parts) - 1];
 
-        if (sizeof($parts) > 1) {
-            $header .= 'namespace ' . join('\\', array_slice($parts, 0, -1)) . ';' . str_repeat(PHP_EOL, 2);
-        }
-
         $fields = '';
         $header .= '/**' . PHP_EOL . ' * Class ' . $class . PHP_EOL;
         foreach ($this->fields as $field => $definition) {
@@ -184,13 +197,17 @@ class Mapping
 
             $fields .= PHP_EOL . str_repeat(' ', 16) . '\'' . $field . '\' => [\'' . $definition[0] . '\'';
 
+            if ($definition['primary']) {
+                $fields .= ', \'primary\' => true';
+            }
+
+            if ($definition['require']) {
+                $fields .= ', \'require\' => true';
+            }
+
             if ($definition['sequence']) {
                 $sequence = is_string($definition['sequence']) ? '\'' . $definition['sequence'] . '\'' : 'true';
                 $fields .= ', \'sequence\' => ' . $sequence;
-            }
-
-            if ($definition['primary']) {
-                $fields .= ', \'primary\' => true';
             }
 
             $fields .= '],';
@@ -230,8 +247,7 @@ CODE;
             return $definition['class'];
         }
 
-        $namespace = isset($definition['namespace']) ? trim($definition['namespace'], '\\') . '\\' : '';
-        return $namespace . $this->camelize($definition['table']);
+        return $this->camelize($definition['table']);
     }
 
     /**

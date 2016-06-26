@@ -74,6 +74,8 @@ class Mapper
     public function insert(Entity $entity)
     {
         $data = $this->flatten($entity);
+        $this->validate($data);
+
         $this->connection->insert($this->mapping->table(), $data);
 
         $entity->unflag(Entity::FLAG_NEW | Entity::FLAG_DIRTY);
@@ -97,9 +99,10 @@ class Mapper
         }
 
         $data = $this->flatten($entity);
-        $identifier = [];
+        $this->validate($data);
 
-        foreach (array_keys(array_intersect_key($data, $this->mapping->identifier())) as $field) {
+        $identifier = [];
+        foreach (array_keys(array_intersect_key($data, $this->mapping->primary())) as $field) {
             $identifier[$field] = $data[$field];
             unset($data[$field]);
         }
@@ -138,7 +141,7 @@ class Mapper
         $identifier = [];
         $sequence = null;
 
-        foreach (array_intersect_key($data, $this->mapping->identifier()) as $field => $value) {
+        foreach (array_intersect_key($data, $this->mapping->primary()) as $field => $value) {
             $identifier[$field] = $value;
         }
 
@@ -246,6 +249,19 @@ class Mapper
     }
 
     /**
+     * @param array $data
+     * @throws Exception\ValidationException
+     */
+    protected function validate(array $data)
+    {
+        foreach ($this->mapping->required() as $field) {
+            if (!isset($data[$field])) {
+                throw new Exception\ValidationException('Missing required field ' . $field . ' for ' . $this->mapping->entityClass());
+            }
+        }
+    }
+
+    /**
      * @param Entity $entity
      * @param $definition
      * @return Query
@@ -288,7 +304,7 @@ class Mapper
     protected function key(array $data)
     {
         ksort($data);
-        $data = array_intersect_key($data, $this->mapping->identifier());
+        $data = array_intersect_key($data, $this->mapping->primary());
         return http_build_query($data);
     }
 }

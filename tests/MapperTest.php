@@ -156,11 +156,12 @@ class MapperTest extends TestCase
 
         /** @var Connection|\PHPUnit_Framework_MockObject_MockObject $connection */
         $connection = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->setMethodsExcept(['mapper'])->getMock();
-
+        $connection->expects($this->any())->method('getDatabasePlatform')->willReturn(new \Doctrine\DBAL\Platforms\SqlitePlatform());
         $connection->expects($this->once())->method('lastInsertId')->with($sequence);
+
         $mapper = $connection->mapper(Entity\Car::class);
 
-        $entity = $mapper->entity();
+        $entity = $mapper->entity(['name' => 'DMC-12', 'manufacturer_id' => 1]);
         $mapper->insert($entity);
     }
 
@@ -194,5 +195,29 @@ class MapperTest extends TestCase
         $this->assertNull($manufacturer1->getId());
         $this->assertNull($manufacturer2->getId());
         $this->assertNull($manufacturer3->getId());
+    }
+
+    /**
+     * @expectedException \Freckle\Exception\ValidationException
+     * @expectedExceptionMessage Missing required field name for Freckle\Entity\Manufacturer
+     */
+    public function testInsertValidation()
+    {
+        $mapper = $this->connection->mapper(Entity\Manufacturer::class);
+        $mapper->create([]);
+    }
+
+    /**
+     * @expectedException \Freckle\Exception\ValidationException
+     * @expectedExceptionMessage Missing required field name for Freckle\Entity\Manufacturer
+     */
+    public function testUpdateValidation()
+    {
+        $mapper = $this->connection->mapper(Entity\Manufacturer::class);
+        /** @var Entity\Manufacturer $manufacturer */
+        $manufacturer = $mapper->create(['name' => 'DeLorean Motor Company']);
+
+        $manufacturer->setName(null);
+        $mapper->save($manufacturer);
     }
 }

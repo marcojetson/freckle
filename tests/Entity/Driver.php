@@ -24,7 +24,7 @@ class Driver extends Entity
             'table' => 'driver',
             'fields' => [
                 'id' => ['integer', 'sequence' => true, 'primary' => true],
-                'name' => 'string',
+                'name' => ['string', 'require' => true],
             ],
             'relations' => [
                 'cars' => ['many', Car::class, ['driver_id' => 'this.id'], 'through' => 'car_driver.car_id'],

@@ -30,8 +30,8 @@ class Car extends Entity
             'table' => 'car',
             'fields' => [
                 'id' => ['integer', 'sequence' => 'table_id_seq', 'primary' => true],
-                'name' => 'string',
-                'manufacturer_id' => 'integer',
+                'name' => ['string', 'require' => true],
+                'manufacturer_id' => ['integer', 'require' => true],
             ],
             'relations' => [
                 'manufacturer' => ['one', Manufacturer::class, ['id' => 'this.manufacturer_id']],

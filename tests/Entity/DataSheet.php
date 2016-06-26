@@ -22,7 +22,7 @@ class DataSheet extends Entity
             'fields' => [
                 'id' => ['integer', 'sequence' => true, 'primary' => true],
                 'horsepower' => 'integer',
-                'car_id' => 'integer',
+                'car_id' => ['integer', 'require' => true],
             ],
         ];
     }

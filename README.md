@@ -1,8 +1,8 @@
 # Freckle
 
-Freckle is a minimalistic Object-Relational-Mapper built on top of Doctrine DBAL.
+Freckle is an Object-Relational-Mapper built on top of Doctrine DBAL.
 
-Freckle is heavily inspired by [Spot2](https://github.com/vlucas/spot2).
+Freckle is inspired by [Spot2](https://github.com/vlucas/spot2).
 
 [![Build Status](https://travis-ci.org/marcojetson/freckle.svg?branch=master)](https://travis-ci.org/marcojetson/freckle)
 [![Code Climate](https://codeclimate.com/github/marcojetson/freckle/badges/gpa.svg)](https://codeclimate.com/github/marcojetson/freckle)
@@ -79,9 +79,10 @@ Fields are defined by an array with mandatory positional parameters and optional
 ```php
 [
     string $type,
-    bool|string sequence=false, // specify sequence name if required by database
-    bool primary=false,
     mixed default=null, // default value, callables supported!
+    bool primary=false,
+    bool require=false,
+    bool|string sequence=false, // specify sequence name if required by database
 ]
 ```
 
@@ -238,4 +239,3 @@ In the same fashion of fields, defining a relation consist in an array with mand
     string field='id', // related entity primary column
 ]
 ```
-

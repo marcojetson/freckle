@@ -4,8 +4,8 @@ return [
     'manufacturer' => [
         'id INTEGER PRIMARY KEY AUTOINCREMENT',
         'name TEXT NOT NULL',
-        'stock_price INTEGER NOT NULL',
-        'founding_year INTEGER NOT NULL',
+        'stock_price INTEGER',
+        'founding_year INTEGER',
     ],
     'car' => [
         'id INTEGER PRIMARY KEY AUTOINCREMENT',
@@ -14,7 +14,7 @@ return [
     ],
     'data_sheet' => [
         'id INTEGER PRIMARY KEY AUTOINCREMENT',
-        'horsepower INTEGER NOT NULL',
+        'horsepower INTEGER',
         'car_id INTEGER NOT NULL REFERENCES car (id)',
     ],
     'driver' => [
@@ -23,7 +23,7 @@ return [
     ],
     'car_driver' => [
         'id INTEGER PRIMARY KEY AUTOINCREMENT',
-        'car_id INTEGER NOT NULL',
+        'car_id INTEGER NOT NULL REFERENCES car (id)',
         'driver_id INTEGER NOT NULL REFERENCES driver (id)',
     ],
 ];

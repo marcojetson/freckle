@@ -30,7 +30,7 @@ class Manufacturer extends Entity
             'table' => 'manufacturer',
             'fields' => [
                 'id' => ['integer', 'sequence' => true, 'primary' => true],
-                'name' => 'string',
+                'name' => ['string', 'require' => true],
                 'stock_price' => 'integer',
                 'founding_year' => 'integer',
             ],

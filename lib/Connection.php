@@ -47,21 +47,15 @@ class Connection extends \Doctrine\DBAL\Connection
     }
 
     /**
-     * @param array $options
      * @return Mapping[]
      */
-    public function generate(array $options = [])
+    public function generate()
     {
-        $options = array_merge([
-            'namespace' => null,
-        ], $options);
-
         $schemaManager = $this->getSchemaManager();
 
         $definitions = [];
         foreach ($schemaManager->listTables() as $table) {
             $definition = [
-                'namespace' => $options['namespace'],
                 'table' => $table->getName(),
                 'fields' => [],
             ];
@@ -69,25 +63,17 @@ class Connection extends \Doctrine\DBAL\Connection
             foreach ($table->getColumns() as $column) {
                 $field = $column->getName();
 
-                $definition['fields'][$field] = $column->getType()->getName();
-
-                if ($column->getAutoincrement()) {
-                    $definition['fields'][$field] = array_merge((array)$definition['fields'][$field], [
-                        'sequence' => true,
-                    ]);
-                }
+                $definition['fields'][$field] = [
+                    $column->getType()->getName(),
+                    'require' => $column->getNotnull(),
+                    'sequence' => $column->getAutoincrement(),
+                ];
             }
 
             foreach ($schemaManager->listTableIndexes($definition['table']) as $index) {
                 foreach ($index->getColumns() as $field) {
-                    if (!isset($definition['fields'][$field])) {
-                        continue;
-                    }
-
                     if ($index->isPrimary()) {
-                        $definition['fields'][$field] = array_merge((array)$definition['fields'][$field], [
-                            'primary' => true,
-                        ]);
+                        $definition['fields'][$field]['primary'] = true;
                     }
                 }
             }
