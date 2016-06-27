@@ -10,17 +10,10 @@ class QueryTest extends TestCase
         $this->assertSameSize($this->fixtures['manufacturer'], $manufacturers);
     }
 
-    public function testFirst()
-    {
-        $manufacturer = $this->connection->mapper(Entity\Manufacturer::class)->find()->first();
-        $this->assertInstanceOf(Entity\Manufacturer::class, $manufacturer);
-        $this->assertFalse($manufacturer->flagged(Entity::FLAG_NEW));
-    }
-
     public function testLimit()
     {
         $manufacturers = $this->connection->mapper(Entity\Manufacturer::class)->find()->limit(2);
-        $this->assertCount(2, $manufacturers->run());
+        $this->assertCount(2, $manufacturers);
     }
 
     public function testOffset()
@@ -28,9 +21,9 @@ class QueryTest extends TestCase
         $mapper = $this->connection->mapper(Entity\Manufacturer::class);
 
         /** @var Entity\Manufacturer $manufacturer1 */
-        $manufacturer1 = $mapper->find()->first();
+        $manufacturer1 = $mapper->find()[0];
         /** @var Entity\Manufacturer $manufacturer2 */
-        $manufacturer2 = $mapper->find()->offset(2)->first();
+        $manufacturer2 = $mapper->find()->offset(2)[0];
 
         $this->assertNotEquals($manufacturer1->getName(), $manufacturer2->getName());
     }
@@ -38,7 +31,8 @@ class QueryTest extends TestCase
     public function testEquals()
     {
         $query = $this->connection->mapper(Entity\Manufacturer::class)->find();
-        $manufacturer = $query->eq('name', 'Audi')->first();
+        /** @var Entity\Manufacturer $manufacturer */
+        $manufacturer = $query->eq('name', 'Audi')[0];
 
         $this->assertInstanceOf(Entity\Manufacturer::class, $manufacturer);
 
@@ -52,7 +46,7 @@ class QueryTest extends TestCase
         $query = $this->connection->mapper(Entity\Manufacturer::class)->find();
         $manufacturers = $query->not('name', 'Audi');
 
-        $this->assertCount(sizeof($this->fixtures['manufacturer']) - 1, $manufacturers->run());
+        $this->assertCount(sizeof($this->fixtures['manufacturer']) - 1, $manufacturers);
 
         foreach ($manufacturers as $manufacturer) {
             /** @var Entity\Manufacturer $manufacturer */

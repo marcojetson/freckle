@@ -38,7 +38,7 @@ class MapperTest extends TestCase
         $this->assertInstanceOf(Entity::class, $manufacturer);
         $this->assertFalse($manufacturer->flagged(Entity::FLAG_NEW));
         
-        $stored = $mapper->find(['id' => $manufacturer->getId()])->first()->data();
+        $stored = $mapper->first(['id' => $manufacturer->getId()])->data();
         unset($stored['id'], $stored['cars']);
 
         $this->assertEquals($data, $stored);
@@ -61,7 +61,7 @@ class MapperTest extends TestCase
         $this->assertFalse($manufacturer->flagged(Entity::FLAG_NEW));
         $this->assertInternalType('numeric', $manufacturer->getId());
 
-        $stored = $mapper->find(['id' => $manufacturer->getId()])->first()->data();
+        $stored = $mapper->first(['id' => $manufacturer->getId()])->data();
         unset($stored['id'], $stored['cars']);
 
         $this->assertEquals($data, $stored);
@@ -84,7 +84,7 @@ class MapperTest extends TestCase
         $mapper->update($manufacturer);
 
         $data['stock_price'] = 999999;
-        $stored = $mapper->find(['id' => $manufacturer->getId()])->first()->data();
+        $stored = $mapper->first(['id' => $manufacturer->getId()])->data();
         unset($stored['id'], $stored['cars']);
 
         $this->assertEquals($data, $stored);
@@ -130,6 +130,7 @@ class MapperTest extends TestCase
         $this->assertCount(1, $manufacturers);
 
         $mapper->upsert($data, ['name' => 'not found']);
+        $manufacturers = $mapper->find($conditions);
         $this->assertCount(2, $manufacturers);
     }
 
@@ -147,7 +148,7 @@ class MapperTest extends TestCase
 
         $this->assertTrue($manufacturer->flagged(Entity::FLAG_NEW));
         $this->assertNull($manufacturer->getId());
-        $this->assertNull($mapper->find(['id' => $manufacturer->getId()])->first());
+        $this->assertNull($mapper->first(['id' => $manufacturer->getId()]));
     }
 
     public function testInsertWithSequenceName()
@@ -174,15 +175,15 @@ class MapperTest extends TestCase
         /** @var Entity\Manufacturer $manufacturer2 */
         $manufacturer2 = $mapper->first(['id' => 1]);
         /** @var Entity\Manufacturer $manufacturer3 */
-        $manufacturer3 = $mapper->find(['id' => 1])->first();
+        $manufacturer3 = $mapper->find(['id' => 1])[0];
 
         $this->assertSame($manufacturer1, $manufacturer2);
         $this->assertSame($manufacturer1, $manufacturer3);
 
         /** @var Entity\Car $car1 */
-        $car1 = $manufacturer1->getCars()->first();
-        $car2 = $manufacturer2->getCars()->first();
-        $car3 = $manufacturer3->getCars()->first();
+        $car1 = $manufacturer1->getCars()[0];
+        $car2 = $manufacturer2->getCars()[0];
+        $car3 = $manufacturer3->getCars()[0];
 
         $car4 = $this->connection->mapper(Entity\Car::class)->first(['id' => $car1->getId()]);
 

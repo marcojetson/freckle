@@ -7,21 +7,21 @@ class RelationTest extends TestCase
     public function testBelongsTo()
     {
         /** @var Entity\Car $car */
-        $car = $this->connection->mapper(Entity\Car::class)->find()->first();
+        $car = $this->connection->mapper(Entity\Car::class)->first();
         $this->assertInstanceOf(Entity\Manufacturer::class, $car->getManufacturer());
     }
 
     public function testHasOne()
     {
         /** @var Entity\Car $car */
-        $car = $this->connection->mapper(Entity\Car::class)->find()->first();
+        $car = $this->connection->mapper(Entity\Car::class)->first();
         $this->assertInstanceOf(Entity\DataSheet::class, $car->getDataSheet());
     }
 
     public function testHasMany()
     {
         /** @var Entity\Manufacturer $manufacturer */
-        $manufacturer = $this->connection->mapper(Entity\Manufacturer::class)->find(['id' => 1])->first();
+        $manufacturer = $this->connection->mapper(Entity\Manufacturer::class)->first(['id' => 1]);
         $cars = $manufacturer->getCars();
 
         $this->assertSameSize(array_filter($this->fixtures['car'], function ($data) {
@@ -37,7 +37,7 @@ class RelationTest extends TestCase
     public function testHasManyThrough()
     {
         /** @var Entity\Driver $driver */
-        $driver = $this->connection->mapper(Entity\Driver::class)->find(['id' => 1])->first();
+        $driver = $this->connection->mapper(Entity\Driver::class)->first(['id' => 1]);
         $cars = $driver->getCars();
 
         $this->assertSameSize(array_filter($this->fixtures['car_driver'], function ($data) {

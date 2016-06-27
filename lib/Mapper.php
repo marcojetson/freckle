@@ -86,7 +86,7 @@ class Mapper
             $this->bind($entity, [$sequence['field'] => $value]);
         }
 
-        $this->identityMap[$this->key($data)] = $entity;
+        $this->identityMap[$this->key($entity)] = $entity;
     }
 
     /**
@@ -125,7 +125,7 @@ class Mapper
      */
     public function upsert(array $data = [], array $conditions = [])
     {
-        $entity = $this->find($conditions)->first() ? : $this->entity();
+        $entity = $this->first($conditions) ? : $this->entity();
         $this->bind($entity, $data);
         $this->save($entity);
 
@@ -148,12 +148,12 @@ class Mapper
         $this->connection->delete($this->mapping->table(), $identifier);
         $entity->flag(Entity::FLAG_NEW);
 
+        unset($this->identityMap[$this->key($entity)]);
+
         $sequence = $this->mapping->sequence();
         if ($sequence) {
             $this->bind($entity, [$sequence['field'] => null]);
         }
-
-        unset($this->identityMap[$this->key($data)]);
     }
 
     /**
@@ -172,7 +172,14 @@ class Mapper
     public function first(array $conditions = [])
     {
         $key = $this->key($conditions);
-        return isset($this->identityMap[$key]) ? $this->identityMap[$key] : $this->find($conditions)->first();
+
+        if (isset($this->identityMap[$key])) {
+            return $this->identityMap[$key];
+        }
+
+        $result = $this->find($conditions)->limit(1);
+
+        return isset($result[0]) ? $result[0] : null;
     }
 
     /**
@@ -298,11 +305,15 @@ class Mapper
     }
 
     /**
-     * @param array $data
+     * @param Entity|array $data
      * @return string
      */
-    protected function key(array $data)
+    protected function key($data)
     {
+        if ($data instanceof Entity) {
+            $data = $data->data();
+        }
+
         ksort($data);
         $data = array_intersect_key($data, $this->mapping->primary());
         return http_build_query($data);

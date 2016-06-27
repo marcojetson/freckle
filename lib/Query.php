@@ -21,13 +21,16 @@ use Freckle\Operator\Operator;
  * @method $this lessThanOrEquals(string $field, mixed $value)
  * @method $this like(string $field, string $value)
  */
-class Query implements \Countable, \IteratorAggregate
+class Query implements \Countable, \IteratorAggregate, \ArrayAccess
 {
     /** @var Mapper */
     protected $mapper;
 
     /** @var QueryBuilder */
     protected $queryBuilder;
+
+    /** @var array */
+    protected $result;
 
     /**
      * @param QueryBuilder $queryBuilder
@@ -49,22 +52,17 @@ class Query implements \Countable, \IteratorAggregate
     }
 
     /**
-     * @return Entity|null
+     * @param bool $limit
+     * @return int
      */
-    public function first()
+    public function count($limit = true)
     {
-        $result = $this->limit(1)->run();
-        return sizeof($result) > 0 ? $result[0] : null;
-    }
+        if ($limit) {
+            return sizeof($this->run());
+        }
 
-    /**
-     * @inheritdoc
-     */
-    public function count()
-    {
         $queryBuilder = clone $this->queryBuilder;
-        $count = $queryBuilder->select('COUNT(*)')->execute()->fetchColumn(0);
-        return (int)$count;
+        return (int)$queryBuilder->select('COUNT(*)')->execute()->fetchColumn(0);
     }
 
     /**
@@ -126,19 +124,6 @@ class Query implements \Countable, \IteratorAggregate
     }
 
     /**
-     * @return array
-     */
-    public function run()
-    {
-        $statement = $this->queryBuilder->execute();
-        $statement->setFetchMode(\PDO::FETCH_ASSOC);
-        $results = $statement->fetchAll();
-        $statement->closeCursor();
-
-        return $this->mapper ? $this->mapper->collection($results) : $results;
-    }
-
-    /**
      * @param mixed $value
      * @param int $type
      * @return string
@@ -146,6 +131,40 @@ class Query implements \Countable, \IteratorAggregate
     public function parameter($value, $type = null)
     {
         return $this->queryBuilder->createNamedParameter($value, $type);
+    }
+
+    /**
+     * @param int $offset
+     * @return bool
+     */
+    public function offsetExists($offset)
+    {
+        return isset($this->run()[$offset]);
+    }
+
+    /**
+     * @param int $offset
+     * @return Entity|array
+     */
+    public function offsetGet($offset)
+    {
+        return $this->run()[$offset];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function offsetSet($offset, $value)
+    {
+        throw new \RuntimeException('Freckle\Query is read-only');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function offsetUnset($offset)
+    {
+        throw new \RuntimeException('Freckle\Query is read-only');
     }
 
     /**
@@ -202,5 +221,22 @@ class Query implements \Countable, \IteratorAggregate
     protected function operator($name)
     {
         return Operator::get($name);
+    }
+
+    /**
+     * @return array
+     */
+    protected function run()
+    {
+        if (!$this->result || $this->queryBuilder->getState() === QueryBuilder::STATE_DIRTY) {
+            $statement = $this->queryBuilder->execute();
+            $statement->setFetchMode(\PDO::FETCH_ASSOC);
+            $rows = $statement->fetchAll();
+            $statement->closeCursor();
+
+            $this->result = $this->mapper ? $this->mapper->collection($rows) : $rows;
+        }
+
+        return $this->result;
     }
 }
